@@ -52,6 +52,7 @@ export default function Home() {
     };
     animate();
 
+
     const handleResize = () => {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
