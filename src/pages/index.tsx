@@ -19,16 +19,18 @@ export default function Home() {
 
   useEffect(() => {
     const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x1a1a1a);
+
     const camera = new THREE.PerspectiveCamera(
       75,
-      window.innerWidth / window.innerHeight,
+      window.innerWidth * 0.8 / (window.innerHeight * 0.8),
       0.1,
       1000
     );
     camera.position.set(2, 2, 2);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setSize(mountRef.current?.clientWidth || 800, mountRef.current?.clientHeight || 600);
     if (mountRef.current) mountRef.current.appendChild(renderer.domElement);
 
     const controls = new OrbitControls(camera, renderer.domElement);
@@ -37,6 +39,29 @@ export default function Home() {
     cameraRef.current = camera;
     rendererRef.current = renderer;
     controlsRef.current = controls;
+
+    // Add coordinate axes
+    const axesHelper = new THREE.AxesHelper(5);
+    scene.add(axesHelper);
+
+    // Add grid
+    const gridHelper = new THREE.GridHelper(10, 10);
+    gridHelper.rotation.x = Math.PI / 2; // Rotate to XY plane
+    scene.add(gridHelper);
+
+    // Add coordinate labels
+    const addCoordinateLabel = (position: THREE.Vector3, text: string) => {
+      const div = document.createElement('div');
+      div.className = 'coordinate-label';
+      div.textContent = text;
+      div.style.color = 'white';
+      div.style.position = 'absolute';
+      scene.add(new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.TextureLoader().load('') })));
+    };
+
+    addCoordinateLabel(new THREE.Vector3(5.2, 0, 0), 'X');
+    addCoordinateLabel(new THREE.Vector3(0, 5.2, 0), 'Y');
+    addCoordinateLabel(new THREE.Vector3(0, 0, 5.2), 'Z');
 
     const geometry = new THREE.BoxGeometry(1, 1, 1);
     const edges = new THREE.EdgesGeometry(geometry);
@@ -52,12 +77,14 @@ export default function Home() {
     };
     animate();
 
-
     const handleResize = () => {
-      camera.aspect = window.innerWidth / window.innerHeight;
+      const width = mountRef.current?.clientWidth || 800;
+      const height = mountRef.current?.clientHeight || 600;
+      camera.aspect = width / height;
       camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setSize(width, height);
     };
+
     window.addEventListener("resize", handleResize);
 
     return () => {
@@ -126,21 +153,25 @@ export default function Home() {
   };
 
   return (
-    <div>
-      <h1>Miller Indices Visualizer</h1>
-      <form onSubmit={handleSubmit}>
-        <input
-          type="text"
-          placeholder="Enter Miller Indices (e.g., (100) or [111])"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          style={{ width: "300px", fontSize: "1.2em" }}
-        />
-        <button type="submit" style={{ fontSize: "1.2em", marginLeft: "10px" }}>
-          Visualize
-        </button>
-      </form>
-      <div ref={mountRef} />
+    <div className="container">
+      <div className="input-container">
+        <form onSubmit={handleSubmit} className="flex gap-2">
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            className="w-full p-2 bg-gray-800 text-white rounded"
+            placeholder="Enter plane (hkl) or direction [uvw]..."
+          />
+          <button
+            type="submit"
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Visualize
+          </button>
+        </form>
+      </div>
+      <div ref={mountRef} className="viewport" />
     </div>
   );
 }
